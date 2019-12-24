@@ -25,7 +25,7 @@ draw_radar({
   ],
   entries: [
     {"tech": "AA", "category":  "LG", "score": 0, "ts": "2019-12-21T10:00:00.000Z"},
-    {"tech": "BB", "category":  "LG", "score": 2, "ts": "2019-12-21T10:00:00.000Z"},
+    {"tech": "BB", "category":  "IF", "score": 2, "ts": "2019-12-21T10:00:00.000Z"},
     {"tech": "CC", "category":  "LG", "score": 1, "ts": "2019-12-21T10:00:00.000Z"}
   ]
 });

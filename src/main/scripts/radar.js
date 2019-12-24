@@ -39,12 +39,24 @@ function draw_radar(config) {
     return x < y ? x : y;
   }
 
+  const radius = (min(config.width, config.height) - 2) / 2;
+  const ring_count = config.rings.length;
+  function ringBounds(ring) {
+    // use sqrt between [0-1] to give inner rings more room
+    let lower = ring / ring_count;
+    let upper = (ring + 1) / ring_count;
+    return {
+      lower: Math.sqrt(lower) * radius,
+      upper: Math.sqrt(upper) * radius
+    };
+  }
+
   function segment(seg, ring) {
     return {
       randomPos: function() {
         return cartesian( {
           t: random_between(seg * segment_arc, (seg + 1) * segment_arc),
-          r: random_between(ring * ring_size, (ring + 1) * ring_size)
+          r: random_between(ringBounds(ring).lower, ringBounds(ring).upper)
         })
       }
     }
@@ -70,7 +82,6 @@ function draw_radar(config) {
   var grid = radar.append("g");
 
   // draw segment lines
-  const radius = (min(config.width, config.height) - 2) / 2;
   const segment_arc = 2 * Math.PI / config.segments.length;
   for (var i = 0; i < config.segments.length; i++) {
     var x2 = Math.sin(Math.PI - i * segment_arc) * radius;
@@ -83,19 +94,18 @@ function draw_radar(config) {
   }
 
   // draw rings
-  const ring_size = radius / config.rings.length;
   for (var i = 0; i < config.rings.length; i++) {
     grid.append("circle")
         .attr("cx", 0)
         .attr("cy", 0)
-        .attr("r", (i + 1) * ring_size)
+        .attr("r", ringBounds(i).upper)
         .style("fill", "none")
         .style("stroke", config.colors.grid)
         .style("stroke-width", 1);
     if (config.show_labels) {
       grid.append("text")
           .text(config.rings[i].name)
-          .attr("y", -(i + 1) * ring_size + 70)
+          .attr("y", -ringBounds(i).lower - 10)
           .attr("text-anchor", "middle")
           .style("fill", config.colors.grid)
           .style("font-family", "Arial, Helvetica")
