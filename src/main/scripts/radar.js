@@ -12,8 +12,8 @@ function draw_radar(config) {
 
   function cartesian(polar) {
     return {
-      x: polar.r * Math.cos(polar.t),
-      y: polar.r * Math.sin(polar.t)
+      x: polar.r * Math.sin(polar.t),
+      y: - polar.r * Math.cos(polar.t)
     }
   }
 
@@ -64,9 +64,9 @@ function draw_radar(config) {
 
   let segments = config.segments;
   function catIndex(cat) {
-    return segments.indexOf(function(s){
-      return s === cat;
-    })
+    return segments.findIndex(function(s){
+      return s.id === cat;
+    });
   }
 
   var svg = d3.select("svg#" + config.svg_id)
@@ -84,8 +84,8 @@ function draw_radar(config) {
   // draw segment lines
   const segment_arc = 2 * Math.PI / config.segments.length;
   for (var i = 0; i < config.segments.length; i++) {
-    var x2 = Math.sin(Math.PI - i * segment_arc) * radius;
-    var y2 = Math.cos(Math.PI - i * segment_arc) * radius;
+    var x2 = Math.sin(i * segment_arc) * radius;
+    var y2 = - Math.cos(i * segment_arc) * radius;
     grid.append("line")
         .attr("x1", 0).attr("y1", 0)
         .attr("x2", x2).attr("y2", y2)
@@ -109,7 +109,7 @@ function draw_radar(config) {
           .attr("text-anchor", "middle")
           .style("fill", config.colors.grid)
           .style("font-family", "Arial, Helvetica")
-          .style("font-size", 42)
+          .style("font-size", 48 * (Math.sqrt(1 - (i / config.rings.length))))
           .style("font-weight", "bold")
           .style("pointer-events", "none")
           .style("user-select", "none");
