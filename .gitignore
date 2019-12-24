@@ -1,0 +1,21 @@
+
+# file patterns
+*.class
+*.iml
+*.ipr
+*.iws
+*.log
+*/test/*.sc
+
+# folders
+.idea
+target
+out
+_build
+_static
+_templates
+
+# trace output
+java.hprof.txt
+java.hprof
+*.hwcache
