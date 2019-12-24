@@ -1,0 +1,8 @@
+This Open Source Software is created using several other Open Source Software packages.
+We try to attribute all of them in this file.
+
+* D3 - Data Driven Documents
+    https://d3js.org/, licensed under the BSD License (https://opensource.org/licenses/BSD-3-Clause)
+* Zalando Tech Radar
+    our radar is inspired by the original Zalando Tech Radar code as can be found online at
+    https://github.com/zalando/tech-radar and is licensed under the MIT License (MIT)

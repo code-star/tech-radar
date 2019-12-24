@@ -1,5 +1,21 @@
 # Tech Radar
 
+The Tech Radar shows our view on current and emerging Information Technology, including historical
+assessments. IT evolves over time, and our radar can be used to look into the past, showing the categorisation
+and qualification we previously gave to the tools.
+
+We track our assessments per item, periodically adding a timestamped entry to the radar-data.json.
+
+## Data structures
+* name: human readable name/description of the technology
+* id: unique identifier of the technology
+* timestamp: date/time tied to the assessment
+* score: [Unknown|Hold|Assess|Trial|Adopt]
+* category: one or more categories that the tech belongs to
+
+When in multiple categories, the entry will appear multiple times on the radar. The scores can differ
+depending on the category (a tool can be seen as 'Adopt' for one cat, but 'Hold' for another).
+
 ## Original Tech Radar
 The `./example` folder contains the previous version of the tech radar, as it was updated in 2018.07.
 It was sent to me by Hamza in May 2019, with the following comments:
