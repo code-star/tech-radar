@@ -69,6 +69,10 @@ function draw_radar(config) {
     });
   }
 
+  function segment_color(seg, max) {
+    return `hsl(${360 * (seg / max)}, 100%, 50%)`
+  }
+
   var svg = d3.select("svg#" + config.svg_id)
       .style("background-color", config.colors.background)
       .attr("height", config.height)
@@ -127,7 +131,7 @@ function draw_radar(config) {
     var point = entry.segment.randomPos();
     entry.x = point.x;
     entry.y = point.y;
-    entry.color = "#e33";
+    entry.color = segment_color(catIndex(entry.category), segments.length);
   }
 
   // draw blips on the radar
