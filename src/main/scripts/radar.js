@@ -35,12 +35,7 @@ function draw_radar(config) {
     }
     let range = max - min;
     let boundary = empty_zone_percentage * range;
-    let rnd = random();
-    let ret_val = (min + boundary) + (rnd * range_correction * range);
-    if (min > ret_val || max < ret_val){
-      console.log(`random_between error. rnd = ${rnd}, ${min} - ${max} gave ${ret_val}`);
-    }
-    return ret_val;
+    return (min + boundary) + (random() * range_correction * range);
   }
 
   function translate(x, y) {
