@@ -46,7 +46,7 @@ function draw_radar(config) {
     return x < y ? x : y;
   }
 
-  const radius = (min(config.width, config.height) - 2) / 2;
+  const radius = (min(config.width, config.height) - 10) / 2;
   const ring_count = config.rings.length;
   function ringBounds(ring) {
     // use sqrt between [0-1] to give inner rings more room
@@ -59,15 +59,29 @@ function draw_radar(config) {
   }
 
   function segment(seg, ring, segmentCount) {
+    let t_min = seg * segment_arc;
+    let t_max = (seg + 1) * segment_arc;
+    let r_min = ringBounds(ring).lower / 2;
+    let r_max = ringBounds(ring).upper / 2;
     return {
       randomPos: function() {
-        return cartesian( {
-          t: random_between(seg * segment_arc, (seg + 1) * segment_arc),
-          r: random_between(ringBounds(ring).lower, ringBounds(ring).upper)
-        })
+        return {
+          t: random_between(t_min, t_max),
+          r: random_between(r_min, r_max)
+        }
       },
       color: function() {
         return segment_color(seg, segmentCount)
+      },
+      adjust: function(d) {
+        let new_polar = {
+          t: Math.max(t_min, Math.min(t_max, d.x)),
+          r: Math.max(r_min, Math.min(r_max, d.y))};
+        d.x = new_polar.t;
+        d.y = new_polar.r;
+        d.cx = cartesian({t: d.x, r: d.y}).x;
+        d.cy = cartesian({t: d.x, r: d.y}).y;
+        return new_polar
       }
     }
   }
@@ -139,9 +153,15 @@ function draw_radar(config) {
   for(var i=0; i<config.entries.length;i++){
     var entry = config.entries[i];
     entry.segment = segment(catIndex(entry.category), entry.score, segments.length);
-    var point = entry.segment.randomPos();
-    entry.x = point.x;
-    entry.y = point.y;
+    entry.point = entry.segment.randomPos();
+
+    // polar for simulation - keep blips in correct ring and segment
+    entry.x = entry.point.r;
+    entry.y = entry.point.t;
+
+    // cartesian for drawing
+    entry.cx = cartesian({"r": entry.x, "t": entry.y}).x;
+    entry.cy = cartesian({"r": entry.x, "t": entry.y}).y;
     entry.color = entry.segment.color();
   }
 
@@ -160,7 +180,28 @@ function draw_radar(config) {
     blip.append("circle")
         .attr("r", 9)
         .attr("fill", d.color)
-        .attr("transform", translate(d.x, d.y));
+        .attr("transform", translate(d.cx, d.cy));
 
   });
+
+  function ticked() {
+    blips.attr("transform", function(d){
+      return translate(d.cx, d.cy)
+    })
+  }
+
+  function restrict(alpha){
+    for (var i = 0; i < config.entries.length; i++){
+      let entry = config.entries[i];
+      entry.segment.adjust(entry);
+    }
+  }
+
+  // make sure blips do not overlap, but stay within their assigned zone
+  d3.forceSimulation()
+      .nodes(config.entries)
+      .velocityDecay(0.4)
+      .force("collision", d3.forceCollide().radius(12).strength(0.7))
+      .force("restrict", restrict)
+      .on("tick", ticked)
 }
