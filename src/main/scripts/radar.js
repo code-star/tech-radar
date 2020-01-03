@@ -26,9 +26,21 @@ function draw_radar(config) {
   }
 
   // avoid x% of each end
-  let empty_zone_percentage = 0.1;
+  // assumes 0 <= min < max
+  const empty_zone_percentage = 0.1;
+  const range_correction = 1.0 - 2 * empty_zone_percentage;
   function random_between(min, max) {
-    return min * (1 + empty_zone_percentage) + random() * (1 - 2 * empty_zone_percentage) * (max - min);
+    if (max <= min || min < 0){
+      console.warn(`random_between called with invalid min/max: ${min} / ${max}`)
+    }
+    let range = max - min;
+    let boundary = empty_zone_percentage * range;
+    let rnd = random();
+    let ret_val = (min + boundary) + (rnd * range_correction * range);
+    if (min > ret_val || max < ret_val){
+      console.log(`random_between error. rnd = ${rnd}, ${min} - ${max} gave ${ret_val}`);
+    }
+    return ret_val;
   }
 
   function translate(x, y) {
@@ -51,13 +63,16 @@ function draw_radar(config) {
     };
   }
 
-  function segment(seg, ring) {
+  function segment(seg, ring, segmentCount) {
     return {
       randomPos: function() {
         return cartesian( {
           t: random_between(seg * segment_arc, (seg + 1) * segment_arc),
           r: random_between(ringBounds(ring).lower, ringBounds(ring).upper)
         })
+      },
+      color: function() {
+        return segment_color(seg, segmentCount)
       }
     }
   }
@@ -86,8 +101,9 @@ function draw_radar(config) {
   var grid = radar.append("g");
 
   // draw segment lines
-  const segment_arc = 2 * Math.PI / config.segments.length;
-  for (var i = 0; i < config.segments.length; i++) {
+  const segment_count = config.segments.length;
+  const segment_arc = 2 * Math.PI / segment_count;
+  for (var i = 0; i < segment_count; i++) {
     var x2 = Math.sin(i * segment_arc) * radius;
     var y2 = - Math.cos(i * segment_arc) * radius;
     grid.append("line")
@@ -127,11 +143,11 @@ function draw_radar(config) {
   // position each entry randomly in its segment
   for(var i=0; i<config.entries.length;i++){
     var entry = config.entries[i];
-    entry.segment = segment(catIndex(entry.category), entry.score);
+    entry.segment = segment(catIndex(entry.category), entry.score, segments.length);
     var point = entry.segment.randomPos();
     entry.x = point.x;
     entry.y = point.y;
-    entry.color = segment_color(catIndex(entry.category), segments.length);
+    entry.color = entry.segment.color();
   }
 
   // draw blips on the radar
