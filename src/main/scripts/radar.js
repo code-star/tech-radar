@@ -5,8 +5,8 @@ function draw_radar(config) {
 
   function polar(car) {
     return {
-      t: Math.atan2(car.y, car.x),
-      r: Math.sqrt(car.x * car.x + car.y * car.y)
+      r: Math.sqrt(car.x * car.x + car.y * car.y),
+      t: Math.atan2(car.y, car.x)
     }
   }
 
@@ -21,7 +21,7 @@ function draw_radar(config) {
   // source: https://stackoverflow.com/questions/521295
   let seed = 42;
   function random() {
-    var x = Math.sin(seed++) * 10000;
+    let x = Math.sin(seed++) * 10000;
     return x - Math.floor(x);
   }
 
@@ -46,6 +46,10 @@ function draw_radar(config) {
     return x < y ? x : y;
   }
 
+  function equal(a, b, eps = 0.0001) {
+    return Math.abs(a - b) <= eps;
+  }
+
   const radius = (min(config.width, config.height) - 10) / 2;
   const ring_count = config.rings.length;
   function ringBounds(ring) {
@@ -59,28 +63,36 @@ function draw_radar(config) {
   }
 
   function segment(seg, ring, segmentCount) {
+    let r_min = ringBounds(ring).lower;
+    let r_max = ringBounds(ring).upper;
     let t_min = seg * segment_arc;
     let t_max = (seg + 1) * segment_arc;
-    let r_min = ringBounds(ring).lower / 2;
-    let r_max = ringBounds(ring).upper / 2;
     return {
       randomPos: function() {
         return {
-          t: random_between(t_min, t_max),
-          r: random_between(r_min, r_max)
+          r: random_between(r_min, r_max),
+          t: random_between(t_min, t_max)
         }
       },
       color: function() {
         return segment_color(seg, segmentCount)
       },
       adjust: function(d) {
+        delete d.fx;
+        delete d.fy;
         let new_polar = {
-          t: Math.max(t_min, Math.min(t_max, d.x)),
-          r: Math.max(r_min, Math.min(r_max, d.y))};
-        d.x = new_polar.t;
-        d.y = new_polar.r;
-        d.cx = cartesian({t: d.x, r: d.y}).x;
-        d.cy = cartesian({t: d.x, r: d.y}).y;
+          r: Math.max(r_min, Math.min(r_max, d.x)),
+          t: Math.max(t_min, Math.min(t_max, d.y))
+        };
+        if (!equal(d.x, new_polar.r) || !equal(d.y, new_polar.t)){
+          console.log("adjusted blip, set fixed position");
+          d.fx = new_polar.r;
+          d.fy = new_polar.t;
+        }
+        d.x = new_polar.r;
+        d.y = new_polar.t;
+        d.cx = cartesian({r: d.x, t: d.y}).x;
+        d.cy = cartesian({r: d.x, t: d.y}).y;
         return new_polar
       }
     }
@@ -156,12 +168,12 @@ function draw_radar(config) {
     entry.point = entry.segment.randomPos();
 
     // polar for simulation - keep blips in correct ring and segment
-    entry.x = entry.point.r;
-    entry.y = entry.point.t;
+    entry.x = entry.point.t;
+    entry.y = entry.point.r;
 
     // cartesian for drawing
-    entry.cx = cartesian({"r": entry.x, "t": entry.y}).x;
-    entry.cy = cartesian({"r": entry.x, "t": entry.y}).y;
+    entry.cx = cartesian({t: entry.x, r: entry.y}).x;
+    entry.cy = cartesian({t: entry.x, r: entry.y}).y;
     entry.color = entry.segment.color();
   }
 
@@ -178,7 +190,7 @@ function draw_radar(config) {
 
     // blip shape and position
     blip.append("circle")
-        .attr("r", 9)
+        .attr("r", 7)
         .attr("fill", d.color)
         .attr("transform", translate(d.cx, d.cy));
 
@@ -186,22 +198,33 @@ function draw_radar(config) {
 
   function ticked() {
     blips.attr("transform", function(d){
+      d.cx = cartesian({t: d.x, r: d.y}).x;
+      d.cy = cartesian({t: d.x, r: d.y}).y;
+
       return translate(d.cx, d.cy)
     })
   }
 
+  const max_velocity = 3.0;
+  const max_velocity_squared = max_velocity * max_velocity;
   function restrict(alpha){
     for (var i = 0; i < config.entries.length; i++){
       let entry = config.entries[i];
       entry.segment.adjust(entry);
+      // reduce velocity if above max
+      let velocity_squared = entry.vx * entry.vx + entry.vy * entry.vy;
+      if (velocity_squared > max_velocity_squared){
+        entry.vx = entry.vx * max_velocity / Math.sqrt(velocity_squared);
+        entry.vy = entry.vy * max_velocity / Math.sqrt(velocity_squared);
+      }
     }
   }
 
   // make sure blips do not overlap, but stay within their assigned zone
   d3.forceSimulation()
       .nodes(config.entries)
-      .velocityDecay(0.4)
-      .force("collision", d3.forceCollide().radius(12).strength(0.7))
+      .velocityDecay(0.1)
+      .force("collision", d3.forceCollide().radius(12).strength(0.6))
       .force("restrict", restrict)
       .on("tick", ticked)
 }
