@@ -12,7 +12,8 @@ function draw_radar(config) {
 
   // cartesian conversion from polar, taking into account the SVG coordinate system
   // which has +x to the right, and -y to the top
-  // I use polar coordinates with the angle t in degreed against -y, going clockwise
+  // I use polar coordinates with the angle t in degrees against -y, going clockwise
+  // this places the first segment at the top right (starting at 12 o'clock position)
   function cartesian(polar) {
     return {
       x: polar.r * Math.sin(rad(polar.t)),
