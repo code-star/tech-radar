@@ -166,6 +166,25 @@ function draw_radar(config) {
   var rink = radar.append("g")
       .attr("id", "rink")
 
+  // info bubble
+  var bubble = radar.append("g")
+      .attr("id", "bubble")
+      .attr("x", 0).attr("y", 0)
+      .style("opacity", 0)
+      .style("pointer-events", "none")
+      .style("user-select", "none");
+  bubble.append("rect")
+      .attr("rx", 4)
+      .attr("ry", 4)
+      .style("fill", "#000");
+  bubble.append("text")
+      .style("font-family", "sans-serif")
+      .style("font-size", "10px")
+      .style("fill", "#fff");
+  bubble.append("path")
+      .attr("d", "M 0,0 10,0 5,12 z")
+      .style("fill", "#000");
+
   // position each entry randomly in its segment
   for(var i=0; i<config.entries.length;i++){
     var entry = config.entries[i];
@@ -182,12 +201,42 @@ function draw_radar(config) {
     entry.color = entry.segment.color();
   }
 
+  function showBubble(d){
+    let lines = d.label.split("\n");
+    let text = d3.select("#bubble text");
+    text.selectAll("*").remove();
+    for(let i = 0; i < lines.length; i++){
+      text.append("tspan")
+          .attr("x", 0)
+          .attr("dy", "1.1em")
+          .text(lines[i]);
+    }
+    let bbox = text.node().getBBox();
+    d3.select("#bubble")
+        .attr("transform", translate(d.cx - bbox.width / 2, d.cy - bbox.height - 20))
+        .style("opacity", 0.8);
+    d3.select("#bubble rect")
+        .attr("x", -5).attr("y", 0)
+        .attr("width", bbox.width + 10)
+        .attr("height", bbox.height + 4);
+    d3.select("#bubble path")
+        .attr("transform", translate( bbox.width / 2 - 5, bbox.height + 4));
+  }
+
+  function hideBubble(d){
+    d3.select("#bubble")
+        .attr("transform", translate(0, 0))
+        .style("opacity", 0);
+  }
+
   // draw blips on the radar
   var blips = rink.selectAll(".blip")
       .data(config.entries)
       .enter()
       .append("g")
-      .attr("class", "blip");
+      .attr("class", "blip")
+      .on("mouseover", showBubble)
+      .on("mouseout", hideBubble);
 
   // configure each blip
   blips.each(function(d){
@@ -196,7 +245,7 @@ function draw_radar(config) {
     // blip shape and position
     blip.attr("transform", translate(d.cx, d.cy))
         .append("circle")
-        .attr("r", 7)
+        .attr("r", 10)
         .attr("fill", d.color);
   });
 
@@ -217,7 +266,7 @@ function draw_radar(config) {
   d3.forceSimulation()
       .nodes(config.entries)
       .velocityDecay(0.7)
-      .force("collision", d3.forceCollide().radius(10).strength(0.1))
+      .force("collision", d3.forceCollide().radius(12).strength(0.1))
       .force("restrict", restrict)
       .on("tick", ticked)
 }
