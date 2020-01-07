@@ -81,18 +81,10 @@ function draw_radar(config) {
         return segment_color(seg, segmentCount)
       },
       adjust: function(d, alpha) {
-        let dx = alpha * d.vx;
-        let dy = alpha * d.vy;
         let new_polar = {
-          r: Math.max(r_min, Math.min(r_max, d.x + dx)),
-          t: Math.max(t_min, Math.min(t_max, d.y + dy))
+          r: Math.max(r_min, Math.min(r_max, d.x)),
+          t: Math.max(t_min, Math.min(t_max, d.y))
         };
-        if (equal(new_polar.r, r_min) || equal(new_polar.r, r_max) ||
-            equal(new_polar.t, t_min) || equal(new_polar.t, t_max)){
-          // at border we stop
-          d.vx = 0;
-          d.vy = 0;
-        }
         d.x = new_polar.r;
         d.y = new_polar.t;
         d.cx = cartesian(new_polar).x;
@@ -223,7 +215,7 @@ function draw_radar(config) {
   // make sure blips do not overlap, but stay within their assigned zone
   d3.forceSimulation()
       .nodes(config.entries)
-      .velocityDecay(0.8)
+      .velocityDecay(0.7)
       .force("collision", d3.forceCollide().radius(10).strength(0.1))
       .force("restrict", restrict)
       .on("tick", ticked)
