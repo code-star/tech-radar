@@ -66,8 +66,8 @@ function draw_radar(config) {
   }
 
   function segment(seg, ring, segmentCount) {
-    let r_min = ringBounds(ring).lower / 2;
-    let r_max = ringBounds(ring).upper / 2;
+    let r_min = ringBounds(ring).lower;
+    let r_max = ringBounds(ring).upper;
     let t_min = seg * segment_arc;
     let t_max = (seg + 1) * segment_arc;
     return {
@@ -185,11 +185,10 @@ function draw_radar(config) {
     let blip = d3.select(this);
 
     // blip shape and position
-    blip.append("circle")
+    blip.attr("transform", translate(d.cx, d.cy))
+        .append("circle")
         .attr("r", 7)
-        .attr("fill", d.color)
-        .attr("transform", translate(d.cx, d.cy));
-
+        .attr("fill", d.color);
   });
 
   function ticked() {
