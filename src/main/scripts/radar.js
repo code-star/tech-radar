@@ -10,6 +10,9 @@ function draw_radar(config) {
     }
   }
 
+  // cartesian conversion from polar, taking into account the SVG coordinate system
+  // which has +x to the right, and -y to the top
+  // I use polar coordinates with the angle t against -y, going clockwise
   function cartesian(polar) {
     return {
       x: polar.r * Math.sin(polar.t),
@@ -63,8 +66,8 @@ function draw_radar(config) {
   }
 
   function segment(seg, ring, segmentCount) {
-    let r_min = ringBounds(ring).lower;
-    let r_max = ringBounds(ring).upper;
+    let r_min = ringBounds(ring).lower / 2;
+    let r_max = ringBounds(ring).upper / 2;
     let t_min = seg * segment_arc;
     let t_max = (seg + 1) * segment_arc;
     return {
@@ -78,21 +81,14 @@ function draw_radar(config) {
         return segment_color(seg, segmentCount)
       },
       adjust: function(d) {
-        delete d.fx;
-        delete d.fy;
         let new_polar = {
           r: Math.max(r_min, Math.min(r_max, d.x)),
           t: Math.max(t_min, Math.min(t_max, d.y))
         };
-        if (!equal(d.x, new_polar.r) || !equal(d.y, new_polar.t)){
-          console.log("adjusted blip, set fixed position");
-          d.fx = new_polar.r;
-          d.fy = new_polar.t;
-        }
         d.x = new_polar.r;
         d.y = new_polar.t;
-        d.cx = cartesian({r: d.x, t: d.y}).x;
-        d.cy = cartesian({r: d.x, t: d.y}).y;
+        d.cx = cartesian(new_polar).x;
+        d.cy = cartesian(new_polar).y;
         return new_polar
       }
     }
@@ -168,12 +164,12 @@ function draw_radar(config) {
     entry.point = entry.segment.randomPos();
 
     // polar for simulation - keep blips in correct ring and segment
-    entry.x = entry.point.t;
-    entry.y = entry.point.r;
+    entry.x = entry.point.r;
+    entry.y = entry.point.t;
 
     // cartesian for drawing
-    entry.cx = cartesian({t: entry.x, r: entry.y}).x;
-    entry.cy = cartesian({t: entry.x, r: entry.y}).y;
+    entry.cx = cartesian(entry.point).x;
+    entry.cy = cartesian(entry.point).y;
     entry.color = entry.segment.color();
   }
 
@@ -198,33 +194,22 @@ function draw_radar(config) {
 
   function ticked() {
     blips.attr("transform", function(d){
-      d.cx = cartesian({t: d.x, r: d.y}).x;
-      d.cy = cartesian({t: d.x, r: d.y}).y;
-
       return translate(d.cx, d.cy)
     })
   }
 
-  const max_velocity = 3.0;
-  const max_velocity_squared = max_velocity * max_velocity;
   function restrict(alpha){
     for (var i = 0; i < config.entries.length; i++){
       let entry = config.entries[i];
       entry.segment.adjust(entry);
-      // reduce velocity if above max
-      let velocity_squared = entry.vx * entry.vx + entry.vy * entry.vy;
-      if (velocity_squared > max_velocity_squared){
-        entry.vx = entry.vx * max_velocity / Math.sqrt(velocity_squared);
-        entry.vy = entry.vy * max_velocity / Math.sqrt(velocity_squared);
-      }
     }
   }
 
   // make sure blips do not overlap, but stay within their assigned zone
   d3.forceSimulation()
       .nodes(config.entries)
-      .velocityDecay(0.1)
-      .force("collision", d3.forceCollide().radius(12).strength(0.6))
+      .velocityDecay(0.8)
+      .force("collision", d3.forceCollide().radius(10).strength(0.2))
       .force("restrict", restrict)
       .on("tick", ticked)
 }
