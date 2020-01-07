@@ -12,11 +12,11 @@ function draw_radar(config) {
 
   // cartesian conversion from polar, taking into account the SVG coordinate system
   // which has +x to the right, and -y to the top
-  // I use polar coordinates with the angle t against -y, going clockwise
+  // I use polar coordinates with the angle t in degreed against -y, going clockwise
   function cartesian(polar) {
     return {
-      x: polar.r * Math.sin(polar.t),
-      y: - polar.r * Math.cos(polar.t)
+      x: polar.r * Math.sin(rad(polar.t)),
+      y: - polar.r * Math.cos(rad(polar.t))
     }
   }
 
@@ -42,7 +42,7 @@ function draw_radar(config) {
   }
 
   function translate(x, y) {
-    return "translate(" + x + "," + y + ")";
+    return `translate(${x},${y})`;
   }
 
   function min(x, y) {
@@ -80,11 +80,19 @@ function draw_radar(config) {
       color: function() {
         return segment_color(seg, segmentCount)
       },
-      adjust: function(d) {
+      adjust: function(d, alpha) {
+        let dx = alpha * d.vx;
+        let dy = alpha * d.vy;
         let new_polar = {
-          r: Math.max(r_min, Math.min(r_max, d.x)),
-          t: Math.max(t_min, Math.min(t_max, d.y))
+          r: Math.max(r_min, Math.min(r_max, d.x + dx)),
+          t: Math.max(t_min, Math.min(t_max, d.y + dy))
         };
+        if (equal(new_polar.r, r_min) || equal(new_polar.r, r_max) ||
+            equal(new_polar.t, t_min) || equal(new_polar.t, t_max)){
+          // at border we stop
+          d.vx = 0;
+          d.vy = 0;
+        }
         d.x = new_polar.r;
         d.y = new_polar.t;
         d.cx = cartesian(new_polar).x;
@@ -117,12 +125,20 @@ function draw_radar(config) {
 
   var grid = radar.append("g");
 
+  function rad(deg) {
+    return Math.PI * deg / 180.0;
+  }
+
+  function deg(rad) {
+    return 180.0 * rad / Math.PI
+  }
+
   // draw segment lines
   const segment_count = config.segments.length;
-  const segment_arc = 2 * Math.PI / segment_count;
+  const segment_arc = 360.0 / segment_count;
   for (var i = 0; i < segment_count; i++) {
-    var x2 = Math.sin(i * segment_arc) * radius;
-    var y2 = - Math.cos(i * segment_arc) * radius;
+    var x2 = Math.sin(i * rad(segment_arc)) * radius;
+    var y2 = - Math.cos(i * rad(segment_arc)) * radius;
     grid.append("line")
         .attr("x1", 0).attr("y1", 0)
         .attr("x2", x2).attr("y2", y2)
@@ -200,7 +216,7 @@ function draw_radar(config) {
   function restrict(alpha){
     for (var i = 0; i < config.entries.length; i++){
       let entry = config.entries[i];
-      entry.segment.adjust(entry);
+      entry.segment.adjust(entry, alpha);
     }
   }
 
@@ -208,7 +224,7 @@ function draw_radar(config) {
   d3.forceSimulation()
       .nodes(config.entries)
       .velocityDecay(0.8)
-      .force("collision", d3.forceCollide().radius(10).strength(0.2))
+      .force("collision", d3.forceCollide().radius(10).strength(0.1))
       .force("restrict", restrict)
       .on("tick", ticked)
 }
