@@ -2,30 +2,40 @@
 // See https://github.com/code-star/tech-radar for license details and attribution
 
 let myRings = data.scores;
+function scoreName(score){
+  let ret_val = myRings.find(r => r.id == score);
+  if (ret_val === undefined){
+    return `Unknown score (${score})`;
+  }
+  return ret_val.name;
+}
+
 let mySegments = data.categories;
 function catName(cat){
-  for(let i = 0; i < mySegments.length; i++){
-    if(mySegments[i]["id"] == cat)
-      return mySegments[i]["name"];
+  let ret_val = mySegments.find(s => s.id == cat);
+  if (ret_val === undefined){
+    return `Unknown cat (${cat})`;
   }
-  return `Unknown cat (${cat})`;
+  return ret_val.name;
 }
 
 const myTechs = data.technologies;
 function techName(tech) {
-  for(let i = 0; i < myTechs.length; i++){
-    if (myTechs[i]["id"] == tech){
-      return myTechs[i]["name"];
-    }
+  let ret_val = myTechs.find(t => t.id == tech);
+  if (ret_val === undefined){
+    return `Unknown tech (${tech})`;
   }
-  return `Unknown tech (${tech})`;
+  return ret_val.name;
 }
 
 let myEntries = data.assessments
     .map( entry => {
+      let label = `${techName(entry.tech)}`;
+      label += `\nAssessed as ${scoreName(entry.score)}\nin category ${catName(entry.category)}`;
+
       return {
         category: entry.category,
-        label: `Category ${catName(entry.category)}\n${techName(entry.tech)}`,
+        label: label,
         score: entry.score
       }
     });
