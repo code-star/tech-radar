@@ -10,7 +10,11 @@ function scoreName(score){
   return ret_val.name;
 }
 
-let mySegments = data.categories;
+let mySegments = data.categories
+    .map(c => {
+      c.active = true;
+      return c;
+    });
 function catName(cat){
   let ret_val = mySegments.find(s => s.id == cat);
   if (ret_val === undefined){

@@ -111,6 +111,50 @@ function draw_radar(config) {
       .attr("height", config.height)
       .attr("width", config.width);
 
+  function toggleCat(d){
+    let cat = d3.select(this);
+    d.active = ! d.active;
+    cat.select("rect")
+        .style("fill", d.active ? "#262" : "#131");
+    cat.select("text")
+        .style("fill", d.active ? "#ffc" : "#666");
+  }
+
+  // create list of categories, to allow on/off selection
+  let cat_list = svg.append("g")
+      .attr("id", "categories");
+
+  let cats = cat_list.selectAll(".category")
+      .data(config.segments)
+      .enter()
+        .append("g")
+          .attr("class", "category");
+
+  cats.each(function(d, i){
+    let cat = d3.select(this)
+        .attr("id", `cat-${d.id}`)
+        .attr("transform", translate(10, 30 + i * 36))
+        .style("user-select", "none")
+        .on("click", toggleCat);
+
+    cat.append("rect")
+        .attr("rx", 4)
+        .attr("ry", 4)
+        .style("fill", d.active ? "#262" : "#131");
+    cat.append("text")
+        .attr("transform", translate(0, 10))
+        .style("font-family", "sans-serif")
+        .style("font-size", "18px")
+        .style("fill", d.active ? "#ffc" : "#666")
+        .text(d.name);
+    let bb = cat.select("text").node().getBBox();
+    cat.select("rect")
+        .attr("x", -5)
+        .attr("y", -12)
+        .attr("width", bb.width + 10)
+        .attr("height", bb.height + 10)
+  });
+
   var radar = svg.append("g");
 
   // position radar in middle of the svg
@@ -164,7 +208,7 @@ function draw_radar(config) {
 
   // create layer for entries
   var rink = radar.append("g")
-      .attr("id", "rink")
+      .attr("id", "rink");
 
   // info bubble
   var bubble = radar.append("g")
