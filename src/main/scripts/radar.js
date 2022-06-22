@@ -106,6 +106,17 @@ function draw_radar(config) {
     return `hsl(${360 * (seg / max)}, 100%, 50%)`
   }
 
+  function segment_pie(seg, max, radius){
+    let xc = 80 * seg;
+    let yc = 100;
+    let x1 = xc + Math.sin(i * rad(segment_arc)) * radius;
+    let y1 = yc - Math.cos(i * rad(segment_arc)) * radius;
+    let x2 = xc + Math.sin((i+1) * rad(segment_arc)) * radius;
+    let y2 = yc - Math.cos((i+1) * rad(segment_arc)) * radius;
+
+    return `M ${xc} ${yc} D ${x1} ${y1} A ${radius} ${radius} 0 0 0 ${x1} ${y1} ${x2} ${y2} Z`
+  }
+
   var svg = d3.select("svg#" + config.svg_id)
       .style("background-color", config.colors.background)
       .attr("height", config.height)
@@ -170,7 +181,7 @@ function draw_radar(config) {
     return 180.0 * rad / Math.PI
   }
 
-  // draw segment lines
+  // draw segment lines and segment background
   const segment_count = config.segments.length;
   const segment_arc = 360.0 / segment_count;
   for (var i = 0; i < segment_count; i++) {
@@ -181,6 +192,9 @@ function draw_radar(config) {
         .attr("x2", x2).attr("y2", y2)
         .style("stroke", config.colors.grid)
         .style("stroke-width", 1)
+    grid.append("path")
+        .attr("fill", segment_color(i, segment_count))
+        .attr("d", segment_pie(i, segment_count, radius))
   }
 
   // draw rings
